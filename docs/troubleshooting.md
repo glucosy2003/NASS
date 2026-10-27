@@ -37,7 +37,7 @@ Static files are not mapped. On PythonAnywhere, add:
 
 | URL | Directory |
 |---|---|
-| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/backend/website/static` |
+| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/website/static` |
 
 For other hosts, run `collectstatic` and configure the web server.
 

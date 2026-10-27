@@ -20,6 +20,7 @@ ROOT = Path(SPECPATH).resolve().parent
 
 datas = [
     (str(ROOT / "backend"), "backend"),
+    (str(ROOT / "website"), "website"),
     (str(ROOT / "database" / "seed.sqlite3"), "database"),
     (str(ROOT / "desktop_app" / "assets"), "assets"),
 ]
@@ -33,7 +34,7 @@ hiddenimports += pyqt[2]
 
 a = Analysis(
     [str(ROOT / "desktop_app" / "main.py")],
-    pathex=[str(ROOT / "backend")],
+    pathex=[str(ROOT), str(ROOT / "backend")],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,

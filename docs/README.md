@@ -22,8 +22,8 @@ Start here depending on what you are doing.
   your own values.
 - `.\venv\Scripts\python.exe` is the project interpreter. Activate the venv if
   you prefer plain `python`.
-- Paths beginning with `backend/`, `desktop_app/`, or `scripts/` are relative to
-  the repository root.
+- Paths beginning with `backend/`, `website/`, `desktop_app/`, or `scripts/` are
+  relative to the repository root.
 
 ## Repository map
 
@@ -31,7 +31,7 @@ Start here depending on what you are doing.
 |---|---|
 | `backend/nass_backend/` | Django settings and URL routing |
 | `backend/sales/` | Models, API, sync engine, permissions, commands |
-| `backend/website/` | Staff web panel |
+| `website/` | Staff web panel |
 | `desktop_app/` | PyQt5 desktop application |
 | `desktop_app/sync/` | Sync client and configuration |
 | `database/seed.sqlite3` | Clean database template |

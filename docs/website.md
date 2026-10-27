@@ -83,12 +83,12 @@ record payments without overwriting each other.
 
 | Item | Location |
 |---|---|
-| Templates | `backend/website/templates/website/` |
-| Static assets | `backend/website/static/` |
+| Templates | `website/templates/website/` |
+| Static assets | `website/static/` |
 | Shop name | `NASS_SHOP_NAME` environment variable |
-| Context processor | `backend/website/context_processors.py` |
-| Routes | `backend/website/urls.py` |
-| Views | `backend/website/views.py` |
+| Context processor | `website/context_processors.py` |
+| Routes | `website/urls.py` |
+| Views | `website/views.py` |
 
 The shop name appears in the page header and the admin dashboard. It defaults
 to `My Shop`, so set `NASS_SHOP_NAME` before deploying.
@@ -103,7 +103,7 @@ static mapping:
 
 | URL | Directory |
 |---|---|
-| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/backend/website/static` |
+| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/website/static` |
 
 For other hosts, run `collectstatic` and let the web server or a CDN serve the
 files.

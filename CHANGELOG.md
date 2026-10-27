@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The staff web panel now lives in a top-level `website/` app, separate from
+  the Django backend, so frontend contributors can focus on it directly.
+
 ## [1.0.1] - 2026-10-27
 
 ### Added

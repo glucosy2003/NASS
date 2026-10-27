@@ -6,16 +6,19 @@ import os
 # -----------------------------
 
 if getattr(sys, "frozen", False):
-    runtime_root = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
-    backend_candidates = [
-        os.path.join(runtime_root, "backend"),
-        os.path.join(os.path.dirname(sys.executable), "backend"),
+    runtime_roots = [
+        getattr(sys, "_MEIPASS", os.path.dirname(sys.executable)),
+        os.path.dirname(sys.executable),
     ]
 else:
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    backend_candidates = [os.path.join(base_dir, "backend")]
+    runtime_roots = [os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))]
 
-for backend_path in backend_candidates:
+for root in runtime_roots:
+    if os.path.isdir(root) and root not in sys.path:
+        sys.path.insert(0, root)
+
+for root in runtime_roots:
+    backend_path = os.path.join(root, "backend")
     if os.path.isdir(backend_path) and backend_path not in sys.path:
         sys.path.insert(0, backend_path)
         break

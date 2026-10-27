@@ -42,7 +42,7 @@ C:\Program Files (x86)\Inno Setup 6\ISCC.exe
 Output: `backend.zip` in the repository root.
 
 Excluded: `__pycache__`, `.git`, `.pyc`, `.sqlite3`, `.log`, `.env`, and the
-virtual environment. Only `backend/` is included.
+virtual environment. Both `backend/` and `website/` are included.
 
 Deploy it as described in [deployment.md](deployment.md).
 
@@ -59,6 +59,7 @@ dist\NASS_v1.0.1\
 ├── NASS_v1.0.1.exe
 └── _internal\
     ├── backend\            Django project and migrations
+    ├── website\            Staff web panel templates and static files
     ├── database\seed.sqlite3
     ├── assets\             logo and images
     └── ...                 Python, PyQt5, Django, DRF, requests

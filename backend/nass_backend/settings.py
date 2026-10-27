@@ -23,6 +23,7 @@ SHOP_NAME = os.getenv("NASS_SHOP_NAME", "My Shop")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -106,13 +107,13 @@ if getattr(sys, "frozen", False):
     # point at database/nass.sqlite3, which is the *developer's working
     # database*, so every fresh shop install inherited the developer's items,
     # users and passwords. The dev database must never reach production.
-    bundled_db_path = BASE_DIR.parent / "database" / "seed.sqlite3"
+    bundled_db_path = PROJECT_ROOT / "database" / "seed.sqlite3"
     if not runtime_db_path.exists() and bundled_db_path.exists():
         shutil.copy2(bundled_db_path, runtime_db_path)
 
     db_name = runtime_db_path
 else:
-    db_name = BASE_DIR.parent / "database" / "nass.sqlite3"
+    db_name = PROJECT_ROOT / "database" / "nass.sqlite3"
 
 DATABASES = {
     'default': {
@@ -220,12 +221,4 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/admin-panel/'
 LOGOUT_REDIRECT_URL = '/'
-
-# ---------------------------------------------------------------------------
-# Static files (website assets)
-# ---------------------------------------------------------------------------
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'website' / 'static',
-]
 

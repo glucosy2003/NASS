@@ -46,7 +46,7 @@ the sync payload.
 |---|---|---|
 | Django project | `backend/nass_backend/` | Settings, URL routing, WSGI entry point |
 | Business app | `backend/sales/` | Models, API, sync engine, permissions, management commands |
-| Web panel | `backend/website/` | Staff HTML UI, templates, static assets |
+| Web panel | `website/` | Staff HTML UI, templates, static assets |
 | Desktop app | `desktop_app/` | PyQt5 UI, local database, sync client |
 | Sync client | `desktop_app/sync/` | HTTP client, config, token encryption, background sync |
 | Packaging | `packaging/` | PyInstaller spec and Inno Setup script |

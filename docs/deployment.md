@@ -14,12 +14,13 @@ From the repository root:
 .\venv\Scripts\python.exe scripts\build_backend_zip.py
 ```
 
-This creates `backend.zip` containing only `backend/`. It excludes
+This creates `backend.zip` containing `backend/` and `website/`. It excludes
 `__pycache__`, `.git`, `.pyc`, `.sqlite3`, `.log`, and `.env` files.
 
 Only the following are needed on the server:
 
 - `backend/` (Django project, apps, migrations)
+- `website/` (staff web panel: templates, static assets, views)
 - `requirements-server.txt`
 
 ## 2. Upload the code
@@ -110,9 +111,11 @@ password after the first login.
 import os
 import sys
 
-path = "/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/backend"
-if path not in sys.path:
-    sys.path.insert(0, path)
+project = "/home/YOURUSERNAME/Nasimango_Auto-Stocking_System"
+backend = project + "/backend"
+for path in (project, backend):
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "nass_backend.settings"
 os.environ["DJANGO_SECRET_KEY"] = "<the same long random string>"
@@ -125,11 +128,14 @@ from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
 ```
 
+The `project` entry on `sys.path` lets Django import the top-level `website/`
+app; keep both paths.
+
 6. Add the static files mapping on the **Web** tab:
 
 | URL | Directory |
 |---|---|
-| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/backend/website/static` |
+| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/website/static` |
 
 7. Press **Reload**.
 

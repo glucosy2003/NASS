@@ -81,10 +81,10 @@ See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ```
 .
-├── backend/                 Django project: REST API, models, web panel
+├── backend/                 Django project: REST API, models, and tests
 │   ├── nass_backend/        Settings, URL configuration, WSGI
-│   ├── sales/               Business models, API, sync engine, tests
-│   └── website/             Staff web panel (templates, static, views)
+│   └── sales/               Business models, API, sync engine, tests
+├── website/                 Staff web panel (templates, static, views)
 ├── desktop_app/             PyQt5 desktop application and sync client
 │   ├── front_end/           Windows, dialogs, and widgets
 │   └── sync/                Sync client, config, crypto, profiles
