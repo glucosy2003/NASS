@@ -45,7 +45,7 @@ the new data. The desktop still works offline while it waits to be updated.
 
 ```bash
 cd ~/Nasimango_Auto-Stocking_System
-# upload and unzip the new backend.zip
+# upload and unzip the new backend.zip (contains backend/ and website/)
 unzip -o backend.zip -d .
 
 cd backend
@@ -56,6 +56,18 @@ python manage.py migrate
 ```
 
 Then press **Reload** on the **Web** tab.
+
+The archive overwrites code only. It does not contain `database/`, `.env`, or
+your environment variables, so the shop database is left untouched.
+
+If this is the first upgrade after the web panel moved out of `backend/`,
+update the `/static/` mapping on the **Web** tab once:
+
+| URL | Directory |
+|---|---|
+| `/static/` | `/home/YOURUSERNAME/Nasimango_Auto-Stocking_System/website/static` |
+
+The old mapping pointed inside `backend/website/static`, which no longer exists.
 
 If the server is on MySQL/PostgreSQL, export the same `DJANGO_DB_*` variables
 used by the WSGI file before running `migrate`.
