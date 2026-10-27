@@ -1,0 +1,66 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}About NASS{% endblock %}
+{% block nav_about %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">About NASS</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px;">
+
+    <div class="card" style="grid-column: 1 / -1;">
+        <div style="text-align: center; padding: 20px;">
+            <h2 style="margin: 0; color: var(--primary-dark);">NASS</h2>
+            <p style="color: var(--text-muted); margin: 5px 0 0;">Nasimango Auto-Stocking System</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top: 0; color: var(--primary-dark);">About</h3>
+        <p><strong>Version:</strong> {{ nass_version }}</p>
+        <p><strong>Shop:</strong> {{ shop_name }}</p>
+        <p><strong>Developer:</strong> NASS contributors</p>
+        <p><strong>&copy; 2026</strong> &middot; Licensed under the MIT License.</p>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top: 0; color: var(--primary-dark);">Quick Guide</h3>
+
+        <h4 style="color: var(--accent); margin-bottom: 5px;">Getting Started</h4>
+        <ol style="margin-top: 0; padding-left: 20px;">
+            <li>Set up items under <strong>Stock Management</strong></li>
+            <li>Start making sales under <strong>Sales</strong></li>
+        </ol>
+
+        <h4 style="color: var(--accent); margin-bottom: 5px;">Cashier Accounts</h4>
+        <ul style="margin-top: 0; padding-left: 20px;">
+            <li>Create cashier accounts under <strong>Manage Users</strong></li>
+            <li>By default, cashiers can sell without entering a password</li>
+            <li>Cashiers cannot access the admin panel</li>
+        </ul>
+
+        <h4 style="color: var(--accent); margin-bottom: 5px;">Sync (Online Backup)</h4>
+        <ul style="margin-top: 0; padding-left: 20px;">
+            <li>Go to <strong>Sync Settings</strong> to connect to server</li>
+            <li>Data syncs automatically every minute</li>
+            <li>To change server, disconnect first then connect to new one</li>
+        </ul>
+    </div>
+
+    <div class="card" style="grid-column: 1 / -1;">
+        <h3 style="margin-top: 0; color: var(--primary-dark);">Tips</h3>
+        <ul style="margin-top: 0; padding-left: 20px; columns: 2;">
+            <li>Sales can be back-dated for missed entries</li>
+            <li>Partial payments are tracked automatically</li>
+            <li>Low stock items appear on the dashboard</li>
+            <li>All data is stored locally on your computer</li>
+            <li>Expenses can be filtered and exported by date</li>
+            <li>Services are tracked with payment status</li>
+        </ul>
+    </div>
+
+</div>
+{% endblock %}

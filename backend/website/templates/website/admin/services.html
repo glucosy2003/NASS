@@ -1,0 +1,449 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+{% block title %}Service Management{% endblock %}
+{% block nav_services %}active{% endblock %}
+{% block content %}
+<h1 class="page-header">Service Management</h1>
+
+<!-- Tabs -->
+<div class="tabs" data-tab-container="serviceTabs">
+  <button class="tab-btn active" data-tab="tab-catalog">Add Service</button>
+  <button class="tab-btn" data-tab="tab-entry">Service Entry</button>
+  <button class="tab-btn" data-tab="tab-records">Services Records</button>
+</div>
+
+<div id="serviceTabs">
+  <!-- Tab 1: Add Service -->
+  <div class="tab-content active" id="tab-catalog">
+    <h3 class="page-subheader">Add Service</h3>
+    <p class="text-muted mb-10" style="font-size: 12px">
+      Add or manage the services catalog.
+    </p>
+
+    <div class="form-row mb-15">
+      <div class="form-group flex-1">
+        <label class="form-label">Service Name</label>
+        <input
+          type="text"
+          class="form-input"
+          id="serviceName"
+          placeholder="e.g. fitting big tyre"
+        />
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">Price (MK)</label>
+        <input
+          type="number"
+          class="form-input w-small"
+          id="servicePrice"
+          step="0.01"
+          value="0"
+        />
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-success" onclick="addService()">
+          Add Service
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Price (MK)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="serviceCatalog">
+          {% for s in services %}
+          <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.price|currency }}</td>
+            <td>{% if s.deleted %}Inactive{% else %}Active{% endif %}</td>
+            <td class="action-cell">
+              <button
+                class="btn btn-sm btn-outline"
+                onclick="editService({{ s.id }}, '{{ s.name|escapejs }}', {{ s.price }})"
+              >
+                Edit
+              </button>
+              <button
+                class="btn btn-sm btn-danger"
+                onclick="deleteService({{ s.id }}, this)"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tab 2: Service Entry -->
+  <div class="tab-content" id="tab-entry">
+    <h3 class="page-subheader">Service Entry</h3>
+    <p class="text-muted mb-10" style="font-size: 12px">
+      Record service transactions.
+    </p>
+
+    <div class="form-row mb-10">
+      <div class="form-group flex-auto">
+        <label class="form-label">Entry Date</label>
+        <input type="datetime-local" class="form-input" id="entryDate" />
+      </div>
+      <div class="form-group flex-1">
+        <label class="form-label">Service</label>
+        <select
+          class="form-input"
+          id="entryService"
+          onchange="updateEntryPrice()"
+        >
+          <option value="">Select a service</option>
+          {% for s in services %}
+          <option value="{{ s.id }}" data-price="{{ s.price }}">
+            {{ s.name }} - {{ s.price|currency }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">Price (MK)</label>
+        <input
+          type="number"
+          class="form-input w-small"
+          id="entryPrice"
+          step="0.01"
+        />
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-success" onclick="addEntryToCart()">
+          Add to Cart
+        </button>
+      </div>
+    </div>
+
+    <div class="form-row mb-15">
+      <div class="form-group flex-1">
+        <label class="form-label">Customer Name (optional)</label>
+        <input type="text" class="form-input" id="entryCustomer" />
+      </div>
+      <div class="form-group flex-1">
+        <label class="form-label">Notes (optional)</label>
+        <input type="text" class="form-input" id="entryNotes" />
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="cart-table" id="entryCartTable">
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Price (MK)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="entryCartBody"></tbody>
+      </table>
+    </div>
+
+    <div class="cart-total" id="entryTotal">Total: MK 0.00</div>
+
+    <button class="complete-sale-btn" onclick="recordServiceEntry()">
+      Record Service Charge(s)
+    </button>
+  </div>
+
+  <!-- Tab 3: Records -->
+  <div class="tab-content" id="tab-records">
+    <h3 class="page-subheader">Services Records</h3>
+
+    <div class="form-row mb-15">
+      <div class="form-group flex-auto">
+        <label class="form-label">From</label>
+        <input
+          type="date"
+          class="form-input"
+          id="svcFrom"
+          value="{{ date_from }}"
+        />
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">To</label>
+        <input
+          type="date"
+          class="form-input"
+          id="svcTo"
+          value="{{ date_to }}"
+        />
+      </div>
+      <div class="form-group flex-auto">
+        <label class="form-label">&nbsp;</label>
+        <div class="flex gap-10">
+          <button class="btn btn-primary" onclick="filterServiceRecords()">
+            Filter
+          </button>
+          <button
+            type="button"
+            class="btn btn-outline"
+            onclick="exportServiceCsv()"
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Service</th>
+            <th>Quantity</th>
+            <th>Total (MK)</th>
+          </tr>
+        </thead>
+        <tbody id="svcRecordsBody">
+          {% for e in entries %}
+          <tr>
+            <td>{{ e.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ e.service.name }}</td>
+            <td>{{ e.quantity }}</td>
+            <td>{{ e.total_amount|currency }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="summary-bar mt-15" id="svcSummaryBar">
+      Total Service Income: {{ total_income|currency }}
+      <span class="dot">&middot;</span>
+      Today: {{ today_income|currency }}
+    </div>
+  </div>
+</div>
+
+<script>
+  var entryCart = [];
+  var URL_SERVICE_UPDATE = "/admin-panel/services/{id}/update/";
+  var URL_SERVICE_DELETE = "/admin-panel/services/{id}/delete/";
+
+  (function setDefaultEntryDate() {
+    var entryDate = document.getElementById("entryDate");
+    if (!entryDate) return;
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    entryDate.value = now.toISOString().slice(0, 16);
+  })();
+
+  function updateEntryPrice() {
+    var sel = document.getElementById("entryService");
+    var opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.price) {
+      document.getElementById("entryPrice").value = opt.dataset.price;
+    }
+  }
+
+  function addService() {
+    var name = document.getElementById("serviceName").value.trim();
+    var price = document.getElementById("servicePrice").value;
+    if (!name) {
+      showToast("Enter a service name.", "error");
+      return;
+    }
+
+    apiPost(
+      '{% url "web:service_create" %}',
+      { name: name, price: price },
+      function () {
+        showToast("Service added!");
+        setTimeout(function () {
+          location.reload();
+        }, 500);
+      },
+      function (err) {
+        showToast(err.error || "Failed.", "error");
+      },
+    );
+  }
+
+  function editService(id, name, price) {
+    var newName = prompt("Service name:", name);
+    if (newName === null) return;
+    var newPrice = prompt("Price (MK):", price);
+    if (newPrice === null) return;
+
+    apiPost(
+      URL_SERVICE_UPDATE.replace("{id}", id),
+      { name: newName, price: newPrice },
+      function () {
+        showToast("Updated!");
+        setTimeout(function () {
+          location.reload();
+        }, 500);
+      },
+      function (err) {
+        showToast(err.error || "Failed.", "error");
+      },
+    );
+  }
+
+  function deleteService(id, btn) {
+    if (!confirm("Delete this service?")) return;
+    apiPost(
+      URL_SERVICE_DELETE.replace("{id}", id),
+      {},
+      function () {
+        btn.closest("tr").remove();
+        showToast("Deleted.");
+      },
+      function (err) {
+        showToast(err.error || "Failed.", "error");
+      },
+    );
+  }
+
+  function addEntryToCart() {
+    var sel = document.getElementById("entryService");
+    var opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) {
+      showToast("Select a service.", "error");
+      return;
+    }
+    var price = parseFloat(document.getElementById("entryPrice").value) || 0;
+
+    entryCart.push({
+      id: parseInt(opt.value),
+      name: opt.text.split(" - ")[0],
+      price: price,
+    });
+    renderEntryCart();
+  }
+
+  function renderEntryCart() {
+    var tbody = document.getElementById("entryCartBody");
+    tbody.innerHTML = "";
+    var total = 0;
+    entryCart.forEach(function (item, i) {
+      total += item.price;
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" +
+        item.name +
+        "</td><td>" +
+        fmtMoney(item.price) +
+        "</td>" +
+        '<td><button class="remove-btn" onclick="entryCart.splice(' +
+        i +
+        ',1); renderEntryCart();">Remove</button></td>';
+      tbody.appendChild(tr);
+    });
+    document.getElementById("entryTotal").textContent =
+      "Total: " + fmtMoney(total);
+  }
+
+  function recordServiceEntry() {
+    if (entryCart.length === 0) {
+      showToast("Cart is empty.", "error");
+      return;
+    }
+    var customer = document.getElementById("entryCustomer").value;
+    var notes = document.getElementById("entryNotes").value;
+    var entryDate = document.getElementById("entryDate").value;
+    if (!entryDate) {
+      showToast("Select an entry date.", "error");
+      return;
+    }
+    var count = 0;
+
+    entryCart.forEach(function (item) {
+      apiPost(
+        '{% url "web:service_entry_create" %}',
+        {
+          service_id: item.id,
+          quantity: 1,
+          unit_price: item.price,
+          total_amount: item.price,
+          date: entryDate,
+          customer_name: customer,
+          notes: notes,
+        },
+        function () {
+          count++;
+          if (count === entryCart.length) {
+            showToast("Service charges recorded!");
+            entryCart = [];
+            renderEntryCart();
+          }
+        },
+        function (err) {
+          showToast(err.error || "Failed.", "error");
+        },
+      );
+    });
+  }
+
+  function exportServiceCsv() {
+    var from = document.getElementById("svcFrom").value;
+    var to = document.getElementById("svcTo").value;
+    window.location.href =
+      '{% url "web:services_export" %}?from=' +
+      encodeURIComponent(from) +
+      "&to=" +
+      encodeURIComponent(to);
+  }
+
+  function filterServiceRecords() {
+    var from = document.getElementById("svcFrom").value;
+    var to = document.getElementById("svcTo").value;
+
+    apiGet(
+      '{% url "web:services_entries" %}?from=' + from + "&to=" + to,
+      function (data) {
+        var tbody = document.getElementById("svcRecordsBody");
+        tbody.innerHTML = "";
+        data.entries.forEach(function (e) {
+          tbody.innerHTML +=
+            "<tr>" +
+            "<td>" +
+            e.date +
+            "</td>" +
+            "<td>" +
+            e.service_name +
+            "</td>" +
+            "<td>" +
+            e.quantity +
+            "</td>" +
+            "<td>MK " +
+            parseFloat(e.total_amount).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            }) +
+            "</td>" +
+            "</tr>";
+        });
+        document.getElementById("svcSummaryBar").innerHTML =
+          "Total Service Income: MK " +
+          parseFloat(data.total_income).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          }) +
+          ' <span class="dot">&middot;</span> Today: MK ' +
+          parseFloat(data.today_income).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          });
+      },
+      function (err) {
+        showToast(err.error || "Filter failed.", "error");
+      },
+    );
+  }
+</script>
+{% endblock %}

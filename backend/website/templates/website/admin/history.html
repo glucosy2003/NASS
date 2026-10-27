@@ -1,0 +1,106 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+{% block title %}Partial Payments History{% endblock %}
+{% block nav_partial_history %}active{% endblock %}
+{% block content %}
+<h1 class="page-header">Partial Payments History</h1>
+
+<h2>Outstanding Balances</h2>
+<div class="table-wrapper">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Customer</th>
+        <th>Item</th>
+        <th class="col-hide">Qty</th>
+        <th>Total (MK)</th>
+        <th>Paid (MK)</th>
+        <th>Balance (MK)</th>
+        <th class="col-hide">Collected</th>
+        <th>Status</th>
+        <th class="col-hide">Phone</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pp in outstanding_payments %}
+      <tr>
+        <td>{{ pp.created_at|date:"Y-m-d" }}</td>
+        <td>{{ pp.customer_name|default:"-" }}</td>
+        <td>{{ pp.item.name }}</td>
+        <td class="col-hide">{% widthratio pp.quantity 1 1 %}</td>
+        <td>{{ pp.total_amount|currency }}</td>
+        <td>{{ pp.paid|currency }}</td>
+        <td
+          style="color: {% if pp.balance > 0 %}var(--danger){% else %}var(--success){% endif %};"
+        >
+          {{ pp.balance|currency }}
+        </td>
+        <td class="col-hide">
+          {% if pp.collected %}Yes{% else %}No{% endif %}
+        </td>
+        <td>
+          {% if pp.status == "settled" %}
+          <span style="color: var(--success); font-weight: bold">Settled</span>
+          {% else %}
+          <span style="color: var(--warning-dark); font-weight: bold"
+            >Outstanding</span
+          >
+          {% endif %}
+        </td>
+        <td class="col-hide">{{ pp.phone|default:"-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="mt-15">Settled Payments</h2>
+<div class="table-wrapper">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Customer</th>
+        <th>Item</th>
+        <th class="col-hide">Qty</th>
+        <th>Total (MK)</th>
+        <th>Paid (MK)</th>
+        <th>Balance (MK)</th>
+        <th class="col-hide">Collected</th>
+        <th>Status</th>
+        <th class="col-hide">Phone</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for pp in settled_payments %}
+      <tr>
+        <td>{{ pp.created_at|date:"Y-m-d" }}</td>
+        <td>{{ pp.customer_name|default:"-" }}</td>
+        <td>{{ pp.item.name }}</td>
+        <td class="col-hide">{% widthratio pp.quantity 1 1 %}</td>
+        <td>{{ pp.total_amount|currency }}</td>
+        <td>{{ pp.paid|currency }}</td>
+        <td style="color: var(--success)">{{ pp.balance|currency }}</td>
+        <td class="col-hide">
+          {% if pp.collected %}Yes{% else %}No{% endif %}
+        </td>
+        <td>
+          <span style="color: var(--success); font-weight: bold">Settled</span>
+        </td>
+        <td class="col-hide">{{ pp.phone|default:"-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="summary-bar mt-15">
+  Total: {{ partial_payments|length }} payments
+  <span class="dot">&middot;</span>
+  Outstanding: {{ outstanding_count }}
+  <span class="dot">&middot;</span>
+  Total Owed: {{ total_owed|currency }}
+</div>
+{% endblock %}

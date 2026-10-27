@@ -1,0 +1,7 @@
+# Minimal dependencies for the CENTRAL SERVER (PythonAnywhere).
+# The desktop app needs extra packages (PyQt5, openpyxl, reportlab, ...) that
+# are NOT required here and may not even exist on PythonAnywhere's pip mirror.
+Django==5.2.9
+djangorestframework==3.18.1
+# Uncomment when upgrading to a paid plan with MySQL (see deploy guide §8):
+# pymysql==1.1.1

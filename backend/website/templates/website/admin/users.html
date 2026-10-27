@@ -1,0 +1,64 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Manage Users{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">Manage Users</h1>
+
+<div class="mb-15">
+    <a href="{% url 'web:user_create' %}" class="btn btn-success">+ Add User</a>
+</div>
+
+<div class="table-wrapper">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Full Name</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.full_name }}</td>
+            <td>
+                {% if u.role == 'admin' %}
+                    <span style="color:#3498db; font-weight:bold;">Admin</span>
+                {% else %}
+                    <span style="color:#27ae60; font-weight:bold;">Cashier</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if u.is_active %}
+                    <span style="color:#27ae60;">Active</span>
+                {% else %}
+                    <span style="color:#e74c3c;">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{% if u.last_login %}{{ u.last_login|date:"d M Y H:i" }}{% else %}Never{% endif %}</td>
+            <td class="action-cell">
+                <a href="{% url 'web:user_edit' u.id %}" class="btn btn-sm btn-outline">Edit</a>
+                {% if u.id != request.user.id %}
+                <form method="post" action="{% url 'web:user_toggle' u.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    {% if u.is_active %}
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Deactivate {{ u.username }}?')">Deactivate</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Activate {{ u.username }}?')">Activate</button>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

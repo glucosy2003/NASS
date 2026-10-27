@@ -1,0 +1,83 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Categories{% endblock %}
+{% block nav_categories %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">Categories</h1>
+
+<!-- Add Category -->
+<div class="form-row mb-15">
+    <div class="form-group flex-1">
+        <label class="form-label">Category Name</label>
+        <input type="text" class="form-input" id="catName" placeholder="Category name">
+    </div>
+    <div class="form-group flex-auto" style="padding-top:22px;">
+        <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+            <input type="checkbox" id="catSizeReq" class="form-checkbox"> Size Required
+        </label>
+    </div>
+    <div class="form-group flex-auto">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-success" onclick="addCategory()">Add Category</button>
+    </div>
+</div>
+
+<!-- Categories Table -->
+<div class="table-wrapper">
+<table class="data-table">
+    <thead>
+        <tr><th>Category Name</th><th>Size Required</th><th>Items</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+        {% for cat in categories %}
+        <tr>
+            <td>{{ cat.name }}</td>
+            <td>{% if cat.size_required %}Yes{% else %}No{% endif %}</td>
+            <td>{{ cat.items.count }}</td>
+            <td class="action-cell">
+                <button class="btn btn-sm btn-outline" onclick="editCategory({{ cat.id }}, '{{ cat.name|escapejs }}', {{ cat.size_required|yesno:'true,false' }})">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteCategory({{ cat.id }}, this)">Delete</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<script>
+var URL_CATEGORY_UPDATE = '/admin-panel/categories/{id}/update/';
+var URL_CATEGORY_DELETE = '/admin-panel/categories/{id}/delete/';
+
+function addCategory() {
+    var name = document.getElementById('catName').value.trim();
+    var sizeReq = document.getElementById('catSizeReq').checked;
+    if (!name) { showToast('Enter a category name.', 'error'); return; }
+
+    apiPost('{% url "web:category_create" %}', { name: name, size_required: sizeReq },
+        function() { showToast('Category added!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+
+function editCategory(id, name, sizeReq) {
+    var newName = prompt('Category name:', name);
+    if (newName === null) return;
+    var newSize = confirm('Size required?');
+
+    apiPost(URL_CATEGORY_UPDATE.replace('{id}', id), { name: newName, size_required: newSize },
+        function() { showToast('Updated!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+
+function deleteCategory(id, btn) {
+    if (!confirm('Delete this category?')) return;
+    apiPost(URL_CATEGORY_DELETE.replace('{id}', id), {},
+        function() { btn.closest('tr').remove(); showToast('Deleted.'); },
+        function(err) { showToast(err.error || 'Cannot delete category with active items.', 'error'); }
+    );
+}
+</script>
+{% endblock %}

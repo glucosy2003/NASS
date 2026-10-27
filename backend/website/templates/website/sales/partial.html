@@ -1,0 +1,189 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+
+{% block title %}Partial Payments{% endblock %}
+{% block nav_partial_payments %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">Partial Payments</h1>
+<p class="text-muted mb-15" style="font-size:12px;">
+    Create partial payments (layaway) for customers. Stock is reduced only when the customer collects the item.
+</p>
+
+<!-- New Partial Payment Form -->
+<div class="card mb-15">
+    <h3 class="page-subheader">New Partial Payment</h3>
+    <div class="form-row mb-10">
+        <div class="form-group flex-1">
+            <label class="form-label">Item</label>
+            <select class="form-input" id="ppItem" onchange="updatePpPrice()">
+                <option value="">Select item</option>
+            </select>
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">Qty</label>
+            <input type="number" class="form-input w-tiny" id="ppQty" value="1" min="0.001" step="0.001">
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">Unit Price (MK)</label>
+            <input type="number" class="form-input w-small" id="ppPrice" step="0.01">
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">Total (MK)</label>
+            <input type="number" class="form-input w-small" id="ppTotal" step="0.01">
+        </div>
+    </div>
+    <div class="form-row mb-10">
+        <div class="form-group flex-1">
+            <label class="form-label">Customer Name (required)</label>
+            <input type="text" class="form-input" id="ppCustomer" placeholder="Customer name">
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">Phone (optional)</label>
+            <input type="text" class="form-input" id="ppPhone" placeholder="Phone">
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">Amount Paid Now (MK)</label>
+            <input type="number" class="form-input w-small" id="ppPaid" step="0.01" value="0">
+        </div>
+        <div class="form-group flex-auto" style="padding-top:22px;">
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+                <input type="checkbox" id="ppCollected" class="form-checkbox"> Collected now
+            </label>
+        </div>
+        <div class="form-group flex-auto">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-success" onclick="createPartial()">Add Partial Payment</button>
+        </div>
+    </div>
+</div>
+
+<!-- Outstanding Payments -->
+<h2 class="page-subheader">&#128179; Outstanding Payments</h2>
+
+<div class="table-wrapper">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Item</th>
+            <th class="col-hide">Qty</th>
+            <th>Total (MK)</th>
+            <th>Paid (MK)</th>
+            <th>Balance (MK)</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pp in outstanding %}
+        <tr id="ppRow-{{ pp.id }}">
+            <td>{{ pp.created_at|date:"Y-m-d" }}</td>
+            <td>{{ pp.customer_name|default:"-" }}</td>
+            <td>{{ pp.item.name }}</td>
+            <td class="col-hide">{% widthratio pp.quantity 1 1 %}</td>
+            <td>{{ pp.total_amount|currency }}</td>
+            <td>{{ pp.paid|currency }}</td>
+            <td style="color:var(--danger); font-weight:bold;">{{ pp.balance|currency }}</td>
+            <td class="action-cell" style="white-space:nowrap;">
+                <button class="btn btn-sm btn-primary" onclick="recordPayment({{ pp.id }})">Record Payment</button>
+                {% if not pp.collected %}
+                <button class="btn btn-sm btn-warning" onclick="collectItem({{ pp.id }})">Collect</button>
+                {% endif %}
+                <button class="btn btn-sm btn-success" onclick="settleInvoice({{ pp.id }})">Settle</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<script>
+var ITEMS = {{ items_json|safe }};
+
+// Populate item dropdown
+(function() {
+    var sel = document.getElementById('ppItem');
+    ITEMS.forEach(function(item) {
+        var opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item.name + (item.size ? ' (' + item.size + ')' : '') + ' - MK ' + parseFloat(item.unit_price).toLocaleString('en-US', {minimumFractionDigits:2}) + ' [' + fmtQty(item.quantity_in_stock) + ' in stock]';
+        opt.dataset.price = item.unit_price;
+        opt.dataset.stock = item.quantity_in_stock;
+        sel.appendChild(opt);
+    });
+})();
+
+function updatePpPrice() {
+    var sel = document.getElementById('ppItem');
+    var opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.price) {
+        document.getElementById('ppPrice').value = opt.dataset.price;
+        recalcTotal();
+    }
+}
+
+function recalcTotal() {
+    var qty = parseFloat(document.getElementById('ppQty').value) || 0;
+    var price = parseFloat(document.getElementById('ppPrice').value) || 0;
+    document.getElementById('ppTotal').value = (qty * price).toFixed(2);
+}
+
+document.getElementById('ppQty').addEventListener('input', recalcTotal);
+document.getElementById('ppPrice').addEventListener('input', recalcTotal);
+
+function createPartial() {
+    var sel = document.getElementById('ppItem');
+    var itemId = sel.value;
+    if (!itemId) { showToast('Select an item.', 'error'); return; }
+
+    var customer = document.getElementById('ppCustomer').value.trim();
+    if (!customer) { showToast('Customer name is required.', 'error'); return; }
+
+    var data = {
+        item_id: parseInt(itemId),
+        quantity: parseFloat(document.getElementById('ppQty').value),
+        unit_price: parseFloat(document.getElementById('ppPrice').value),
+        total_amount: parseFloat(document.getElementById('ppTotal').value),
+        amount_paid: parseFloat(document.getElementById('ppPaid').value) || 0,
+        collected: document.getElementById('ppCollected').checked,
+        customer_name: customer,
+        phone: document.getElementById('ppPhone').value,
+    };
+
+    apiPost('{% url "web:partial_create" %}', data,
+        function() { showToast('Partial payment created!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+
+function recordPayment(ppId) {
+    var amount = prompt('Amount to pay (MK):');
+    if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+
+    apiPost('{% url "web:partial_record" %}', { partial_payment_id: ppId, amount: amount },
+        function() { showToast('Payment recorded!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+
+function collectItem(ppId) {
+    if (!confirm('Collect this item? Stock will be reduced.')) return;
+
+    apiPost('{% url "web:partial_collect" %}', { partial_payment_id: ppId },
+        function() { showToast('Item collected!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+
+function settleInvoice(ppId) {
+    if (!confirm('Settle the full remaining balance?')) return;
+
+    apiPost('{% url "web:partial_settle" %}', { partial_payment_id: ppId },
+        function() { showToast('Invoice settled!'); setTimeout(function(){ location.reload(); }, 500); },
+        function(err) { showToast(err.error || 'Failed.', 'error'); }
+    );
+}
+</script>
+{% endblock %}

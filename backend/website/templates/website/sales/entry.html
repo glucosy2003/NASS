@@ -1,0 +1,236 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Sales Entry{% endblock %}
+{% block nav_sales_entry %}active{% endblock %}
+{% block nav_sales_entry_cashier %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">{{ shop_name }}</h1>
+<p class="page-subheader" style="color: var(--text-muted);">Sales Entry</p>
+
+<!-- Sale Date -->
+<div class="flex gap-15 items-center mb-15">
+    <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Sale Date</label>
+        <input type="datetime-local" class="form-input w-medium" id="saleDate">
+    </div>
+</div>
+
+<!-- Item Entry -->
+<div class="flex gap-10 items-center mb-15 flex-wrap">
+    <div class="form-group" style="margin-bottom:0; flex:1 1 250px;">
+        <label class="form-label">Search Item</label>
+        <input type="text" class="search-input" id="itemSearch"
+               placeholder="Type to search items..."
+               autocomplete="off" style="max-width:100%;">
+        <div id="searchResults" style="position:absolute; z-index:100; background:white;
+             border:1px solid var(--border); border-radius:4px; max-height:250px;
+             overflow-y:auto; display:none; width:100%; max-width:400px;"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Quantity</label>
+        <input type="number" class="form-input w-tiny" id="itemQty" value="1" min="0.001" step="0.001">
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-success" id="addToCartBtn">Add to Sale</button>
+    </div>
+</div>
+
+<!-- Cart Table -->
+<div class="table-wrapper">
+<table class="cart-table" id="cartTable">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Size</th>
+            <th>Qty</th>
+            <th>Unit Price (MK)</th>
+            <th>Subtotal (MK)</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="cartBody">
+    </tbody>
+</table>
+</div>
+
+<!-- Total -->
+<div class="cart-total" id="cartTotal">Total: MK 0.00</div>
+
+<!-- Complete Sale -->
+<button class="complete-sale-btn" id="completeSaleBtn">Complete Sale</button>
+
+<!-- Selected item data -->
+<script>
+var ITEMS = {{ items_json|safe }};
+var cart = [];
+var selectedItem = null;
+
+// Set default date to now
+(function() {
+    var now = new Date();
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    var iso = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
+              'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    document.getElementById('saleDate').value = iso;
+})();
+
+// Item search
+var searchInput = document.getElementById('itemSearch');
+var searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', function() {
+    var q = this.value.toLowerCase().trim();
+    if (q.length < 1) { searchResults.style.display = 'none'; return; }
+
+    var matches = ITEMS.filter(function(item) {
+        return item.name.toLowerCase().indexOf(q) !== -1 ||
+               item.size.toLowerCase().indexOf(q) !== -1 ||
+               item.brand.toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 10);
+
+    if (matches.length === 0) { searchResults.style.display = 'none'; return; }
+
+    searchResults.innerHTML = '';
+    matches.forEach(function(item) {
+        var div = document.createElement('div');
+        div.style.padding = '10px 12px';
+        div.style.cursor = 'pointer';
+        div.style.borderBottom = '1px solid #ecf0f1';
+        div.innerHTML = '<strong>' + item.name + '</strong>' +
+                        (item.size ? ' (' + item.size + ')' : '') +
+                        ' &mdash; MK ' + parseFloat(item.unit_price).toLocaleString('en-US', {minimumFractionDigits:2}) +
+                        ' <span style="color:#7f8c8d; font-size:12px;">[' + fmtQty(item.quantity_in_stock) + ' in stock]</span>';
+        div.addEventListener('mouseenter', function() { this.style.background = '#f8f9fa'; });
+        div.addEventListener('mouseleave', function() { this.style.background = 'white'; });
+        div.addEventListener('click', function() {
+            selectedItem = item;
+            searchInput.value = item.name + (item.size ? ' (' + item.size + ')' : '');
+            document.getElementById('itemQty').value = 1;
+            searchResults.style.display = 'none';
+        });
+        searchResults.appendChild(div);
+    });
+    searchResults.style.display = 'block';
+});
+
+document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+        searchResults.style.display = 'none';
+    }
+});
+
+// Add to cart
+document.getElementById('addToCartBtn').addEventListener('click', function() {
+    if (!selectedItem) { showToast('Please select an item first.', 'error'); return; }
+
+    var qty = parseFloat(document.getElementById('itemQty').value);
+    if (isNaN(qty) || qty <= 0) { showToast('Invalid quantity.', 'error'); return; }
+
+    var stock = parseFloat(selectedItem.quantity_in_stock);
+    if (qty > stock) {
+        if (!confirm('Only ' + fmtQty(stock) + ' in stock. Continue with ' + fmtQty(qty) + '?')) {
+            return;
+        }
+    }
+
+    // Check if already in cart
+    var existing = cart.find(function(c) { return c.id === selectedItem.id; });
+    if (existing) {
+        existing.quantity += qty;
+    } else {
+        cart.push({
+            id: selectedItem.id,
+            name: selectedItem.name,
+            size: selectedItem.size,
+            unit_price: parseFloat(selectedItem.unit_price),
+            quantity: qty,
+        });
+    }
+
+    renderCart();
+    selectedItem = null;
+    searchInput.value = '';
+    document.getElementById('itemQty').value = 1;
+});
+
+function renderCart() {
+    var tbody = document.getElementById('cartBody');
+    tbody.innerHTML = '';
+    var total = 0;
+
+    cart.forEach(function(item, index) {
+        var subtotal = item.unit_price * item.quantity;
+        total += subtotal;
+
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td>' + item.name + '</td>' +
+            '<td>' + (item.size || '') + '</td>' +
+            '<td><input type="number" value="' + item.quantity + '" min="0.001" step="0.001" data-idx="' + index + '" class="cart-qty"></td>' +
+            '<td><input type="number" value="' + item.unit_price + '" min="0" step="0.01" data-idx="' + index + '" class="cart-price"></td>' +
+            '<td>' + fmtMoney(subtotal) + '</td>' +
+            '<td><button class="remove-btn" data-idx="' + index + '">Remove</button></td>';
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('cartTotal').textContent = 'Total: ' + fmtMoney(total);
+
+    // Bind qty/price changes
+    tbody.querySelectorAll('.cart-qty').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var idx = parseInt(this.getAttribute('data-idx'));
+            cart[idx].quantity = parseFloat(this.value) || 1;
+            renderCart();
+        });
+    });
+    tbody.querySelectorAll('.cart-price').forEach(function(input) {
+        input.addEventListener('change', function() {
+            var idx = parseInt(this.getAttribute('data-idx'));
+            cart[idx].unit_price = parseFloat(this.value) || 0;
+            renderCart();
+        });
+    });
+    tbody.querySelectorAll('.remove-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var idx = parseInt(this.getAttribute('data-idx'));
+            cart.splice(idx, 1);
+            renderCart();
+        });
+    });
+}
+
+// Complete sale
+document.getElementById('completeSaleBtn').addEventListener('click', function() {
+    if (cart.length === 0) { showToast('Cart is empty.', 'error'); return; }
+
+    var saleDate = document.getElementById('saleDate').value;
+
+    var items = cart.map(function(c) {
+        return { item_id: c.id, quantity: c.quantity, unit_price: c.unit_price };
+    });
+
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    apiPost('{% url "web:sales_complete" %}',
+        { items: items, date: saleDate },
+        function(resp) {
+            showToast('Sale #' + resp.sale_id + ' completed!');
+            cart = [];
+            renderCart();
+            btn.disabled = false;
+            btn.textContent = 'Complete Sale';
+        },
+        function(err) {
+            showToast(err.error || 'Sale failed.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Complete Sale';
+        }
+    );
+});
+</script>
+{% endblock %}

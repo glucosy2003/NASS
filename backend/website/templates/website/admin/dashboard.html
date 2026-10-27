@@ -1,0 +1,105 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block nav_admin_dashboard %}active{% endblock %}
+
+{% block content %}
+<meta http-equiv="refresh" content="30">
+<h1 class="page-header">{{ shop_name }}</h1>
+
+<div class="flex justify-between items-center mb-20">
+    <span style="font-size:16px; font-weight:bold;">Welcome, {{ user.full_name|default:user.username }}!</span>
+    {% if user.last_login %}
+    <span class="text-muted" style="font-size:12px;">Last login: {{ user.last_login|date:"Y-m-d H:i:s" }}</span>
+    {% endif %}
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-title">Total Products</div>
+        <div class="stat-card-value blue">{{ total_products }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-title">Low Stock Items</div>
+        <div class="stat-card-value red">{{ low_stock_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-title">Today's Service Income</div>
+        <div class="stat-card-value orange">{{ today_service_income|currency }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-title">Today's Sales</div>
+        <div class="stat-card-value green">{{ today_sales|currency }}</div>
+        {% if today_partial_cash %}<div class="stat-card-sub">incl. {{ today_partial_cash|currency }} partial cash</div>{% endif %}
+    </div>
+</div>
+
+<!-- Alerts -->
+{% if low_stock_list or outstanding_pps %}
+<div class="alerts-row">
+    {% if low_stock_list %}
+    <div class="alert-card">
+        <div class="alert-card-title red">&#9888;&#65039; Low Stock Alerts</div>
+        {% for item in low_stock_list %}
+        <div class="alert-item orange">
+            &bull; {{ item.name }}{% if item.size %} ({{ item.size }}){% endif %} -
+            {% widthratio item.quantity_in_stock 1 1 %} unit(s) remaining
+        </div>
+        {% endfor %}
+        <a href="{% url 'web:stock' %}" class="btn btn-sm btn-outline mt-10">View All</a>
+    </div>
+    {% endif %}
+
+    {% if outstanding_pps %}
+    <div class="alert-card">
+        <div class="alert-card-title orange">&#128179; Outstanding Payments</div>
+        {% for pp in outstanding_pps %}
+        <div class="alert-item red">
+            &bull; {{ pp.customer_name|default:pp.item }} - {{ pp.balance|currency }}
+            ({{ pp.quantity }})
+        </div>
+        {% endfor %}
+        <a href="{% url 'web:partial_history' %}" class="btn btn-sm btn-outline mt-10">View All</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Recent Sales -->
+<h2 class="page-subheader">&#128202; Recent Sales</h2>
+
+{% if recent_sales_data %}
+<div class="table-wrapper">
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Sale ID</th>
+            <th>Date</th>
+            <th>Items</th>
+            <th>Amount (MK)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in recent_sales_data %}
+        <tr>
+            <td>{{ entry.sale.id }}</td>
+            <td>{{ entry.sale.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ entry.items_text|truncatechars:60 }}</td>
+            <td>{{ entry.sale.total_amount|currency }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">No sales recorded yet.</p>
+{% endif %}
+
+<!-- Sales Entry Button -->
+<div class="text-right mt-20">
+    <a href="{% url 'web:sales_entry' %}" class="btn btn-success btn-lg">&#10133; Sales Entry</a>
+</div>
+{% endblock %}

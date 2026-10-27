@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NASS{% endblock %} - {{ shop_name }}</title>
+    <link rel="icon" type="image/png" href="{% static 'website/images/logo.png' %}">
+    <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <!-- Hamburger button (mobile only) -->
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <!-- Overlay for mobile sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    {% endif %}
+
+    {% block body %}
+    {% if user.is_authenticated %}
+    <div class="app-layout">
+        <!-- Left Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-avatar">
+                    <img src="{% static 'website/images/logo.png' %}" alt="Logo" class="avatar-logo">
+                </div>
+                <div class="sidebar-user">
+                    <span class="sidebar-username">{{ user.full_name|default:user.username }}</span>
+                    {% if user.email %}
+                    <span class="sidebar-email">{{ user.email }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="sidebar-section-label">MENU</div>
+
+            {% if is_admin %}
+            <a href="{% url 'web:admin_dashboard' %}" class="sidebar-link {% block nav_admin_dashboard %}{% endblock %}">
+                &#128202; Dashboard
+            </a>
+            <a href="{% url 'web:sales_entry' %}" class="sidebar-link {% block nav_sales_entry %}{% endblock %}">
+                &#128722; Sales Entry
+            </a>
+            <a href="{% url 'web:stock' %}" class="sidebar-link {% block nav_stock %}{% endblock %}">
+                &#128230; Stock Management
+            </a>
+            <a href="{% url 'web:services' %}" class="sidebar-link {% block nav_services %}{% endblock %}">
+                &#128295; Service Management
+            </a>
+            <a href="{% url 'web:expenses' %}" class="sidebar-link {% block nav_expenses %}{% endblock %}">
+                &#128176; Expenses
+            </a>
+            <a href="{% url 'web:reports' %}" class="sidebar-link {% block nav_reports %}{% endblock %}">
+                &#128200; Sales Reports
+            </a>
+            <a href="{% url 'web:partial_history' %}" class="sidebar-link {% block nav_partial_history %}{% endblock %}">
+                &#128179; Partial Payments
+            </a>
+            <a href="{% url 'web:users' %}" class="sidebar-link {% block nav_users %}{% endblock %}">
+                &#128101; Manage Users
+            </a>
+            {% else %}
+            <a href="{% url 'web:sales_entry' %}" class="sidebar-link {% block nav_sales_entry_cashier %}{% endblock %}">
+                &#128722; Sales Entry
+            </a>
+            <a href="{% url 'web:partial_payments' %}" class="sidebar-link {% block nav_partial_payments %}{% endblock %}">
+                &#128179; Partial Payments
+            </a>
+            {% endif %}
+
+            <div class="sidebar-divider"></div>
+
+            <div class="sidebar-section-label">ACCOUNT</div>
+
+            <a href="{% url 'web:change_password' %}" class="sidebar-link {% block nav_change_password %}{% endblock %}">
+                &#128273; Change Password
+            </a>
+
+            <div class="sidebar-spacer"></div>
+
+            <a href="{% url 'web:account_info' %}" class="sidebar-link {% block nav_account %}{% endblock %}">
+                &#128100; Personal Info
+            </a>
+            <a href="{% url 'web:about' %}" class="sidebar-link {% block nav_about %}{% endblock %}">
+                &#9432; About NASS
+            </a>
+            <a href="{% url 'web:logout' %}" class="sidebar-link sidebar-logout">
+                &#128682; Logout
+            </a>
+            <div class="sidebar-version">NASS v{{ nass_version }}</div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="content-inner">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    {% else %}
+    {% block fullpage %}{% endblock %}
+    {% endif %}
+    {% endblock %}
+
+    <script src="{% static 'website/js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

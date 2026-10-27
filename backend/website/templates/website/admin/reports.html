@@ -1,0 +1,198 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+{% block title %}Sales Reports{% endblock %}
+{% block nav_reports %}active{% endblock %}
+{% block content %}
+<h1 class="page-header">Profit / Loss Summary</h1>
+
+<!-- Filter -->
+<div class="form-row mb-15">
+  <div class="form-group flex-auto">
+    <label class="form-label">From</label>
+    <input
+      type="date"
+      class="form-input"
+      id="filterFrom"
+      value="{{ date_from }}"
+    />
+  </div>
+  <div class="form-group flex-auto">
+    <label class="form-label">To</label>
+    <input type="date" class="form-input" id="filterTo" value="{{ date_to }}" />
+  </div>
+  <div class="form-group flex-auto">
+    <label class="form-label">&nbsp;</label>
+    <div class="flex gap-10">
+      <button class="btn btn-primary" onclick="filterReports()">Filter</button>
+      <button type="button" class="btn btn-outline" onclick="exportReportCsv()">
+        Export CSV
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Sales Detail Table -->
+<div class="table-wrapper">
+  <table class="data-table" id="reportsTable">
+    <thead>
+      <tr>
+        <th class="col-hide">Sale ID</th>
+        <th>Date</th>
+        <th>Item</th>
+        <th class="col-hide">Size</th>
+        <th>Qty</th>
+        <th>Total (MK)</th>
+        <th>Profit (MK)</th>
+        <th class="col-hide">Loss (MK)</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="reportsBody">
+      {% for si in sale_items %}
+      <tr>
+        <td class="col-hide">{{ si.sale.id }}</td>
+        <td>{{ si.sale.date|date:"Y-m-d H:i" }}</td>
+        <td>{{ si.item.name }}</td>
+        <td class="col-hide">{{ si.item.size|default:"" }}</td>
+        <td>{% widthratio si.quantity 1 1 %}</td>
+        <td>{{ si.item_total|currency }}</td>
+        <td
+          style="color: {% if si.profit >= 0 %}var(--success){% else %}var(--danger){% endif %};"
+        >
+          {% if si.profit >= 0 %}{{ si.profit|currency }}{% else %}-{% endif %}
+        </td>
+        <td class="col-hide" style="color: var(--danger)">
+          {% if si.profit < 0 %}{{ si.profit|floatformat:2|cut:"-"|currency }}{%
+          else %}-{% endif %}
+        </td>
+        <td>
+          <button
+            class="btn btn-sm btn-danger"
+            onclick="deleteSale({{ si.sale.id }})"
+          >
+            Delete
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Summary -->
+<div class="summary-bar" id="summaryBar">
+  Total Items Sold: {% widthratio total_qty 1 1 %}
+  <span class="dot">&middot;</span>
+  Total Amount: {{ total_amount|currency }}
+  <span class="dot">&middot;</span>
+  Profit: {{ total_profit|currency }}
+  <span class="dot">&middot;</span>
+  Loss: {{ total_loss|currency }}
+</div>
+
+<script>
+  function exportReportCsv() {
+    var from = document.getElementById("filterFrom").value;
+    var to = document.getElementById("filterTo").value;
+    window.location.href =
+      '{% url "web:reports_export" %}?from=' +
+      encodeURIComponent(from) +
+      "&to=" +
+      encodeURIComponent(to);
+  }
+
+  function filterReports() {
+    var from = document.getElementById("filterFrom").value;
+    var to = document.getElementById("filterTo").value;
+
+    apiGet(
+      '{% url "web:reports_filter" %}?from=' + from + "&to=" + to,
+      function (data) {
+        var tbody = document.getElementById("reportsBody");
+        tbody.innerHTML = "";
+        data.sale_items.forEach(function (si) {
+          var profit = parseFloat(si.profit);
+          var profitColor = profit >= 0 ? "var(--success)" : "var(--danger)";
+          tbody.innerHTML +=
+            "<tr>" +
+            '<td class="col-hide">' +
+            si.sale_id +
+            "</td>" +
+            "<td>" +
+            si.date +
+            "</td>" +
+            "<td>" +
+            si.item_name +
+            "</td>" +
+            '<td class="col-hide">' +
+            si.item_size +
+            "</td>" +
+            "<td>" +
+            fmtQty(si.quantity) +
+            "</td>" +
+            "<td>MK " +
+            parseFloat(si.item_total).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+            }) +
+            "</td>" +
+            '<td style="color:' +
+            profitColor +
+            '">' +
+            (profit >= 0
+              ? "MK " +
+                profit.toLocaleString("en-US", { minimumFractionDigits: 2 })
+              : "-") +
+            "</td>" +
+            '<td class="col-hide" style="color:var(--danger)">' +
+            (profit < 0
+              ? "MK " +
+                Math.abs(profit).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                })
+              : "-") +
+            "</td>" +
+            '<td><button class="btn btn-sm btn-danger" onclick="deleteSale(' +
+            si.sale_id +
+            ')">Delete</button></td>' +
+            "</tr>";
+        });
+
+        document.getElementById("summaryBar").innerHTML =
+          "Total Items Sold: " +
+          fmtQty(data.total_qty) +
+          ' <span class="dot">&middot;</span> Total Amount: MK ' +
+          parseFloat(data.total_amount).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          }) +
+          ' <span class="dot">&middot;</span> Profit: MK ' +
+          parseFloat(data.total_profit).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          }) +
+          ' <span class="dot">&middot;</span> Loss: MK ' +
+          parseFloat(data.total_loss).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+          });
+      },
+      function (err) {
+        showToast(err.error || "Filter failed.", "error");
+      },
+    );
+  }
+
+  function deleteSale(saleId) {
+    if (!confirm("Delete this sale and restore stock?")) return;
+    apiPost(
+      "/admin-panel/reports/sale/" + saleId + "/delete/",
+      {},
+      function () {
+        showToast("Sale deleted and stock restored.");
+        window.location.reload();
+      },
+      function (err) {
+        showToast(err.error || "Delete failed.", "error");
+      },
+    );
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block fullpage %}
+<div class="dashboard-landing">
+    <div class="dashboard-welcome">Welcome to</div>
+    <div class="dashboard-logo">
+        <img src="{% static 'website/images/logo.png' %}" alt="{{ shop_name }}" onerror="this.alt='{{ shop_name }}'; this.style.fontSize='28px'; this.style.fontWeight='bold'; this.style.color='#2c3e50';">
+    </div>
+    <div class="dashboard-buttons">
+        <a href="{% url 'web:sales_entry' %}" class="dashboard-btn sale">Make a Sale</a>
+        {% if is_admin %}
+        <a href="{% url 'web:admin_dashboard' %}" class="dashboard-btn admin">Admin Panel</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

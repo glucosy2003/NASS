@@ -1,0 +1,57 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Personal Info{% endblock %}
+{% block nav_account %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">Personal Info</h1>
+
+<div class="card" style="max-width:600px;">
+    <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-input" id="accountName" value="{{ user.full_name }}">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="accountEmail" value="{{ user.email }}">
+    </div>
+
+    <button class="btn btn-primary" onclick="saveAccount()">Save Changes</button>
+
+    <div style="margin-top:30px; padding-top:20px; border-top:1px solid var(--border);">
+        <h3 class="page-subheader">Account Details</h3>
+        <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" value="{{ user.username }}" disabled>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Role</label>
+            <input type="text" class="form-input" value="{{ user.role|capfirst }}" disabled>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Account Created</label>
+            <input type="text" class="form-input" value="{{ user.created_at|date:'Y-m-d H:i' }}" disabled>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Last Password Change</label>
+            <input type="text" class="form-input" value="{{ user.last_password_changed|date:'Y-m-d H:i'|default:'Never' }}" disabled>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <input type="text" class="form-input" value="{% if user.is_active %}Active{% else %}Inactive{% endif %}" disabled>
+        </div>
+    </div>
+</div>
+
+<script>
+function saveAccount() {
+    var name = document.getElementById('accountName').value;
+    var email = document.getElementById('accountEmail').value;
+    apiPost('{% url "web:update_account" %}', { full_name: name, email: email },
+        function() { showToast('Account updated!'); },
+        function(err) { showToast(err.error || 'Update failed.', 'error'); }
+    );
+}
+</script>
+{% endblock %}

@@ -1,0 +1,213 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_filters %}
+
+{% block title %}Stock Management{% endblock %}
+{% block nav_stock %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">Stock Management</h1>
+
+<div class="flex gap-10 items-center mb-15 flex-wrap">
+    <input type="text" class="search-input" id="stockSearch" placeholder="Search items..." style="flex:1 1 200px;">
+    <a href="{% url 'web:categories' %}" class="btn btn-outline">Manage Categories</a>
+    <button class="btn btn-success" onclick="openAddItem()">+ Add Item</button>
+</div>
+
+{% if categories %}
+<!-- Category Tabs -->
+<div class="tabs" data-tab-container="stockTabs">
+    {% for cat in categories %}
+    <button class="tab-btn {% if forloop.first and not active_category %}active{% endif %}"
+            data-tab="tab-{{ cat.id }}">{{ cat.name }}</button>
+    {% endfor %}
+</div>
+
+<div id="stockTabs">
+{% for cat in categories %}
+<div class="tab-content {% if forloop.first and not active_category %}active{% endif %}" id="tab-{{ cat.id }}">
+    <div class="table-wrapper">
+    <table class="data-table" id="stockTable-{{ cat.id }}">
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th class="col-hide">Size</th>
+                <th class="col-hide">Cost Price (MK)</th>
+                <th>Unit Price (MK)</th>
+                <th>Qty</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cat.items.all %}
+            <tr data-name="{{ item.name|lower }}" data-size="{{ item.size|lower }}">
+                <td>{{ item.name }}</td>
+                <td class="col-hide">{{ item.size|default:"" }}</td>
+                <td class="col-hide">{{ item.cost_price|currency }}</td>
+                <td>{{ item.unit_price|currency }}</td>
+                <td>{% widthratio item.quantity_in_stock 1 1 %}</td>
+                <td class="action-cell">
+                    <button class="btn btn-sm btn-outline" onclick="editItem({{ item.id }}, '{{ item.name|escapejs }}', '{{ item.size|escapejs }}', {{ item.unit_price }}, {{ item.cost_price }})">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteItem({{ item.id }}, this)">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding:40px;">
+    <p style="font-size:16px; color:var(--text-muted); margin-bottom:15px;">No categories yet. Create a category first, then add items.</p>
+    <a href="{% url 'web:categories' %}" class="btn btn-primary">Create Category</a>
+</div>
+{% endif %}
+
+<!-- Add/Edit Item Modal -->
+<div id="itemModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:8px; padding:20px; width:92%; max-width:400px;">
+        <h3 id="itemModalTitle" style="margin-bottom:15px;">Add Item</h3>
+        <input type="hidden" id="modalCategoryId">
+        <div class="form-group" id="modalCategoryGroup">
+            <label class="form-label">Category</label>
+            <select class="form-input" id="modalCategorySelect">
+                {% for cat in categories %}
+                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Item Name</label>
+            <input type="text" class="form-input" id="modalItemName">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Size</label>
+            <input type="text" class="form-input" id="modalItemSize">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Cost Price (MK)</label>
+            <input type="number" class="form-input" id="modalCostPrice" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Selling Price (MK)</label>
+            <input type="number" class="form-input" id="modalUnitPrice" step="0.01" value="0">
+        </div>
+        <div class="form-group" id="modalQtyGroup">
+            <label class="form-label">Quantity to Add</label>
+            <input type="number" class="form-input" id="modalQuantity" step="0.001" value="0">
+        </div>
+        <div class="flex gap-10 justify-end">
+            <button class="btn btn-gray" onclick="closeItemModal()">Cancel</button>
+            <button class="btn btn-success" id="modalSaveBtn" onclick="saveItem()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var editingItemId = null;
+var URL_STOCK_ADD = '/admin-panel/stock/add/';
+var URL_STOCK_UPDATE = '/admin-panel/stock/{id}/update/';
+var URL_STOCK_ADJUST = '/admin-panel/stock/{id}/adjust/';
+var URL_STOCK_DELETE = '/admin-panel/stock/{id}/delete/';
+
+document.getElementById('stockSearch').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.data-table tbody tr').forEach(function(row) {
+        var name = row.getAttribute('data-name') || '';
+        var size = row.getAttribute('data-size') || '';
+        row.style.display = (name.indexOf(q) !== -1 || size.indexOf(q) !== -1) ? '' : 'none';
+    });
+});
+
+function openAddItem(catId, catName) {
+    editingItemId = null;
+    document.getElementById('itemModalTitle').textContent = catName ? 'Add Item to ' + catName : 'Add Item';
+    var catGroup = document.getElementById('modalCategoryGroup');
+    var catSelect = document.getElementById('modalCategorySelect');
+    if (catId) {
+        document.getElementById('modalCategoryId').value = catId;
+        catGroup.style.display = 'none';
+    } else {
+        catGroup.style.display = '';
+        catSelect.selectedIndex = 0;
+        document.getElementById('modalCategoryId').value = catSelect.value;
+    }
+    document.getElementById('modalItemName').value = '';
+    document.getElementById('modalItemSize').value = '';
+    document.getElementById('modalCostPrice').value = '0';
+    document.getElementById('modalUnitPrice').value = '0';
+    document.getElementById('modalQuantity').value = '0';
+    document.getElementById('modalQtyGroup').style.display = '';
+    document.getElementById('itemModal').style.display = 'flex';
+}
+
+function editItem(id, name, size, unitPrice, costPrice) {
+    editingItemId = id;
+    document.getElementById('itemModalTitle').textContent = 'Edit Item';
+    document.getElementById('modalCategoryGroup').style.display = 'none';
+    document.getElementById('modalItemName').value = name;
+    document.getElementById('modalItemSize').value = size;
+    document.getElementById('modalCostPrice').value = costPrice;
+    document.getElementById('modalUnitPrice').value = unitPrice;
+    document.getElementById('modalQuantity').value = '0';
+    document.getElementById('modalQtyGroup').style.display = '';
+    document.getElementById('itemModal').style.display = 'flex';
+}
+
+function closeItemModal() {
+    document.getElementById('itemModal').style.display = 'none';
+}
+
+function saveItem() {
+    var data = {
+        name: document.getElementById('modalItemName').value,
+        size: document.getElementById('modalItemSize').value,
+        cost_price: document.getElementById('modalCostPrice').value,
+        unit_price: document.getElementById('modalUnitPrice').value,
+    };
+
+    if (editingItemId) {
+        var qty = parseFloat(document.getElementById('modalQuantity').value) || 0;
+        if (qty !== 0) {
+            data.delta = qty;
+            data.details = 'Stock adjustment via edit';
+            apiPost(URL_STOCK_ADJUST.replace('{id}', editingItemId), data,
+                function() {
+                    apiPost(URL_STOCK_UPDATE.replace('{id}', editingItemId), data,
+                        function() { showToast('Item updated!'); setTimeout(function(){ location.reload(); }, 500); },
+                        function(err) { showToast(err.error || 'Update failed.', 'error'); }
+                    );
+                },
+                function(err) { showToast(err.error || 'Stock adjustment failed.', 'error'); }
+            );
+        } else {
+            apiPost(URL_STOCK_UPDATE.replace('{id}', editingItemId), data,
+                function() { showToast('Item updated!'); setTimeout(function(){ location.reload(); }, 500); },
+                function(err) { showToast(err.error || 'Update failed.', 'error'); }
+            );
+        }
+    } else {
+        var catId = document.getElementById('modalCategoryId').value || document.getElementById('modalCategorySelect').value;
+        data.category_id = catId;
+        data.quantity = document.getElementById('modalQuantity').value;
+        apiPost(URL_STOCK_ADD, data,
+            function() { showToast('Item added!'); setTimeout(function(){ location.reload(); }, 500); },
+            function(err) { showToast(err.error || 'Add failed.', 'error'); }
+        );
+    }
+}
+
+function deleteItem(id, btn) {
+    if (!confirm('Delete this item?')) return;
+    apiPost(URL_STOCK_DELETE.replace('{id}', id), {},
+        function() {
+            btn.closest('tr').remove();
+            showToast('Item deleted.');
+        },
+        function(err) { showToast(err.error || 'Delete failed.', 'error'); }
+    );
+}
+</script>
+{% endblock %}

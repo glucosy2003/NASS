@@ -1,0 +1,576 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block fullpage %}
+<style>
+  /* ----- Fancy enhancements — zero color/function change ----- */
+  .login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .login-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.02);
+    /* Reduced top padding for a shorter card */
+    padding: 22px 32px 28px;
+    width: 100%;
+    max-width: 420px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #27ae60 0%, #3498db 100%);
+    opacity: 0.9;
+  }
+
+  .login-card:hover {
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.02);
+  }
+
+  .login-logo {
+    text-align: center;
+    /* Tighter spacing below the logo */
+    margin-bottom: 8px;
+  }
+
+  .login-logo img {
+    max-width: 100%;
+    height: auto;
+    /* Slightly smaller rendered logo */
+    width: 160px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.02));
+    transition: transform 0.3s ease;
+  }
+
+  .login-logo img:hover {
+    transform: scale(1.02);
+  }
+
+  /* ---- Title ---- */
+  .login-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    /* Reduced top margin so it sits closer to the logo */
+    margin: 0 0 20px;
+    letter-spacing: 0.5px;
+    position: relative;
+    transition: color 0.3s ease;
+  }
+
+  .login-title::after {
+    content: "";
+    display: block;
+    width: 48px;
+    height: 3px;
+    background: linear-gradient(90deg, #27ae60, #3498db);
+    border-radius: 3px;
+    /* Tighter gap between title text and its underline accent */
+    margin: 8px auto 0;
+    transition: background 0.3s ease;
+  }
+
+  /* Title accent color changes with role */
+  .login-card.role-admin .login-title {
+    color: #27ae60;
+  }
+  .login-card.role-admin .login-title::after {
+    background: #27ae60;
+  }
+  .login-card.role-cashier .login-title {
+    color: #3498db;
+  }
+  .login-card.role-cashier .login-title::after {
+    background: #3498db;
+  }
+
+  .login-error {
+    background: #fde8e8;
+    color: #c0392b;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    border-left: 4px solid #e74c3c;
+    font-weight: 500;
+    animation: shake 0.3s ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* ---- Role selection cards ---- */
+  .role-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 4px;
+    max-height: 200px;
+    opacity: 1;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                margin-bottom 0.3s ease;
+    overflow: hidden;
+  }
+
+  /* Hide role cards once a role is chosen */
+  .role-options.hidden {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+    pointer-events: none;
+  }
+
+  .role-option {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 12px;
+    border-radius: 14px;
+    border: 2px solid #e0e0e0;
+    background: #fafbfc;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .role-option:hover {
+    border-color: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .role-option .role-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    background: #f0f1f3;
+    color: #999;
+    transition: all 0.25s ease;
+  }
+
+  .role-option .role-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #888;
+    letter-spacing: 0.4px;
+    transition: color 0.25s ease;
+  }
+
+  /* Admin active — green */
+  .role-option.active-admin {
+    border-color: #27ae60;
+    background: linear-gradient(180deg, rgba(39, 174, 96, 0.06) 0%, rgba(39, 174, 96, 0.02) 100%);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.18);
+  }
+  .role-option.active-admin .role-icon {
+    background: #27ae60;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.35);
+  }
+  .role-option.active-admin .role-name {
+    color: #27ae60;
+  }
+
+  /* Cashier active — blue */
+  .role-option.active-cashier {
+    border-color: #3498db;
+    background: linear-gradient(180deg, rgba(52, 152, 219, 0.06) 0%, rgba(52, 152, 219, 0.02) 100%);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.18);
+  }
+  .role-option.active-cashier .role-icon {
+    background: #3498db;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
+  }
+  .role-option.active-cashier .role-name {
+    color: #3498db;
+  }
+
+  /* ---- Back / change role link ---- */
+  .change-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #888;
+    padding: 4px 0;
+    margin-bottom: 16px;
+    transition: color 0.2s ease, transform 0.2s ease;
+    letter-spacing: 0.3px;
+  }
+
+  .change-role:hover {
+    color: #27ae60;
+    transform: translateX(-2px);
+  }
+
+  /* ---- Credentials section (hidden until role selected) ---- */
+  .credentials-section {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease,
+                margin-top 0.35s ease;
+    margin-top: 0;
+  }
+
+  .credentials-section.revealed {
+    max-height: 400px;
+    opacity: 1;
+    margin-top: 0;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+
+  /* Input fields */
+  .form-group input[type="text"],
+  .form-group input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+    background: #fafbfc;
+    outline: none;
+    color: #333;
+  }
+
+  .form-group input[type="text"]:focus,
+  .form-group input[type="password"]:focus {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.12);
+    background: #ffffff;
+  }
+
+  /* Cashier focus color */
+  .login-card.role-cashier .form-group input[type="text"]:focus,
+  .login-card.role-cashier .form-group input[type="password"]:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+  }
+
+  /* Password toggle */
+  .password-wrapper {
+    position: relative;
+  }
+
+  .password-wrapper button {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s ease, transform 0.2s ease;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .password-wrapper button:hover {
+    color: #27ae60;
+    background: rgba(39, 174, 96, 0.06);
+  }
+
+  .login-card.role-cashier .password-wrapper button:hover {
+    color: #3498db;
+    background: rgba(52, 152, 219, 0.06);
+  }
+
+  /* Primary login button — adapts to role */
+  .login-btn {
+    width: 100%;
+    padding: 13px 20px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.25);
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+
+  .login-card.role-cashier .login-btn {
+    background: #3498db;
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+  }
+
+  .login-btn:hover {
+    background: #219a52;
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.35);
+    transform: translateY(-1px);
+  }
+
+  .login-card.role-cashier .login-btn:hover {
+    background: #2980b9;
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.35);
+  }
+
+  .login-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+  }
+
+  .login-card.role-cashier .login-btn:active {
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+  }
+
+  /* Secondary setup button */
+  .setup-btn {
+    display: block;
+    text-align: center;
+    margin-top: 14px;
+    background: var(--success);
+    padding: 12px 20px;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+  }
+
+  .setup-btn:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .setup-btn:active {
+    transform: translateY(0);
+  }
+
+  /* entrance animation */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .login-card {
+    animation: fadeUp 0.45s ease-out forwards;
+  }
+</style>
+
+<div class="login-page">
+  <div class="login-card" id="login-card">
+    <div class="login-logo">
+      <img
+        src="{% static 'website/images/logo.png' %}"
+        alt="Logo"
+        width="160"
+        height="64"
+        onerror="this.style.display='none'"
+      >
+    </div>
+
+    <h1 class="login-title" id="login-title">Login</h1>
+
+    {% if error %}
+    <div class="login-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Role selection cards -->
+      <div class="role-options" id="role-options">
+        <label class="role-option" id="role-admin-label" for="role-admin">
+          <span class="role-icon">&#128100;</span>
+          <span class="role-name">Admin</span>
+        </label>
+        <input type="radio" name="login_role" value="admin" id="role-admin" style="display: none;" onchange="setRole('admin')">
+
+        <label class="role-option" id="role-cashier-label" for="role-cashier">
+          <span class="role-icon">&#128179;</span>
+          <span class="role-name">Cashier</span>
+        </label>
+        <input type="radio" name="login_role" value="cashier" id="role-cashier" style="display: none;" onchange="setRole('cashier')">
+      </div>
+
+      <!-- Credentials section: hidden until a role is selected -->
+      <div id="credentials-section" class="credentials-section" aria-hidden="true">
+        <button type="button" class="change-role" id="change-role-btn" onclick="resetRole()">
+          &#8592; Change role
+        </button>
+
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          {{ form.username }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="password-wrapper">
+            {{ form.password }}
+            <button type="button" onclick="togglePassword(this)" aria-label="Toggle password visibility">&#128065;</button>
+          </div>
+        </div>
+
+        <button type="submit" class="login-btn">Login</button>
+      </div>
+    </form>
+
+    {% if not has_admin %}
+    <a href="{% url 'web:setup' %}" class="setup-btn">First time? Setup admin account</a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// Keep original functionality, add reveal-on-select + title update + card hiding.
+function setRole(role) {
+  var card = document.getElementById('login-card');
+  var title = document.getElementById('login-title');
+  var roleOptions = document.getElementById('role-options');
+  var credentialsSection = document.getElementById('credentials-section');
+  var adminLabel = document.getElementById('role-admin-label');
+  var cashierLabel = document.getElementById('role-cashier-label');
+
+  // Clear previous role classes
+  card.classList.remove('role-admin', 'role-cashier');
+  adminLabel.classList.remove('active-admin');
+  cashierLabel.classList.remove('active-cashier');
+
+  if (role === 'admin') {
+    card.classList.add('role-admin');
+    adminLabel.classList.add('active-admin');
+    title.textContent = 'Admin';
+  } else {
+    card.classList.add('role-cashier');
+    cashierLabel.classList.add('active-cashier');
+    title.textContent = 'Cashier';
+  }
+
+  // Hide the role cards and reveal credentials
+  roleOptions.classList.add('hidden');
+
+  // Use requestAnimationFrame so the max-height transition on role cards can finish
+  requestAnimationFrame(function () {
+    credentialsSection.classList.add('revealed');
+    credentialsSection.setAttribute('aria-hidden', 'false');
+  });
+}
+
+// Reset back to the initial state (show role cards, hide credentials)
+function resetRole() {
+  var card = document.getElementById('login-card');
+  var title = document.getElementById('login-title');
+  var roleOptions = document.getElementById('role-options');
+  var credentialsSection = document.getElementById('credentials-section');
+  var adminLabel = document.getElementById('role-admin-label');
+  var cashierLabel = document.getElementById('role-cashier-label');
+  var adminRadio = document.getElementById('role-admin');
+  var cashierRadio = document.getElementById('role-cashier');
+
+  // Uncheck radios
+  if (adminRadio) adminRadio.checked = false;
+  if (cashierRadio) cashierRadio.checked = false;
+
+  // Reset classes
+  card.classList.remove('role-admin', 'role-cashier');
+  adminLabel.classList.remove('active-admin');
+  cashierLabel.classList.remove('active-cashier');
+
+  title.textContent = 'Login';
+
+  credentialsSection.classList.remove('revealed');
+  credentialsSection.setAttribute('aria-hidden', 'true');
+
+  // Show role cards again
+  roleOptions.classList.remove('hidden');
+}
+
+function togglePassword(btn) {
+  var input = btn.previousElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '&#128064;';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '&#128065;';
+  }
+}
+
+// Preserve any previously selected role on page load (e.g., after a failed login).
+document.addEventListener('DOMContentLoaded', function () {
+  var checkedRole = document.querySelector('input[name="login_role"]:checked');
+  if (checkedRole) {
+    setRole(checkedRole.value);
+  }
+  // If the server rendered a form error, ensure the credentials are visible.
+  {% if error %}
+  setRole(document.querySelector('input[name="login_role"]:checked')?.value || 'admin');
+  {% endif %}
+});
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}{% if editing %}Edit User{% else %}Create User{% endif %}{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block content %}
+<h1 class="page-header">{% if editing %}Edit User: {{ user.username }}{% else %}Create New User{% endif %}</h1>
+
+{% if error %}
+<div class="alert alert-danger" style="margin-bottom:15px;">{{ error }}</div>
+{% endif %}
+
+<div style="max-width:500px;">
+<form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+        <div style="color:#e74c3c; font-size:12px; margin-top:4px;">{{ field.errors.0 }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="form-group" style="margin-top:20px;">
+        <button type="submit" class="btn btn-success">{% if editing %}Save Changes{% else %}Create User{% endif %}</button>
+        <a href="{% url 'web:users' %}" class="btn btn-outline" style="margin-left:10px;">Cancel</a>
+    </div>
+</form>
+</div>
+{% endblock %}
