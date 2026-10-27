@@ -18,7 +18,7 @@ by Django.
 ## 1. Clone and install
 
 ```powershell
-git clone https://github.com/YOUR_GITHUB_USERNAME/nasimango-auto-stocking-system.git
+git clone https://github.com/glucosy2003/NASS.git
 cd nasimango-auto-stocking-system
 
 python -m venv venv

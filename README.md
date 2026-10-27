@@ -106,7 +106,7 @@ See [docs/architecture.md](docs/architecture.md) for the full design.
 ### 1. Set up the environment
 
 ```powershell
-git clone https://github.com/YOUR_GITHUB_USERNAME/nasimango-auto-stocking-system.git
+git clone https://github.com/glucosy2003/NASS.git
 cd nasimango-auto-stocking-system
 
 python -m venv venv
