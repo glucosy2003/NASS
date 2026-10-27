@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtWidgets
 from django.db.models import Sum
 from django.utils import timezone
 
+from front_end.datetime_widgets import local_now_qdatetime
 from sales.models import Expense, ServiceEntry
 
 
@@ -56,7 +57,7 @@ class ExpenseWindow(QtWidgets.QMainWindow):
         form = QtWidgets.QHBoxLayout()
         layout.addLayout(form)
         form.addWidget(QtWidgets.QLabel("Date:"))
-        self.date_edit = QtWidgets.QDateTimeEdit(QtCore.QDateTime.currentDateTime())
+        self.date_edit = QtWidgets.QDateTimeEdit(local_now_qdatetime())
         self.date_edit.setCalendarPopup(True)
         self.date_edit.setDisplayFormat("yyyy-MM-dd HH:mm")
         form.addWidget(self.date_edit)

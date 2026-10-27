@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtWidgets
 from django.db import transaction
 from django.utils import timezone
 
+from front_end.datetime_widgets import local_now_qdatetime
 from sales.models import Item, PartialPayment, PaymentRecord, StockAdjustment
 
 
@@ -103,9 +104,7 @@ class PartialPaymentsWindow(QtWidgets.QMainWindow):
         payment_date_label = QtWidgets.QLabel("Payment Date:")
         payment_date_label.setStyleSheet("font-size: 13px; color: #2c3e50;")
         details_row.addWidget(payment_date_label)
-        self.payment_datetime = QtWidgets.QDateTimeEdit(
-            QtCore.QDateTime.currentDateTime()
-        )
+        self.payment_datetime = QtWidgets.QDateTimeEdit(local_now_qdatetime())
         self.payment_datetime.setCalendarPopup(True)
         self.payment_datetime.setDisplayFormat("yyyy-MM-dd HH:mm")
         details_row.addWidget(self.payment_datetime)

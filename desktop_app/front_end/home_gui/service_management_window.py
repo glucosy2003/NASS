@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtWidgets
 from django.utils import timezone
 from django.db.models import Sum
 
+from front_end.datetime_widgets import local_now_qdatetime
 from sales.models import Service, ServiceEntry
 
 
@@ -256,7 +257,7 @@ class ServiceManagementWindow(QtWidgets.QMainWindow):
         form.addWidget(self.cart_price_input)
 
         form.addWidget(QtWidgets.QLabel("Entry date:"))
-        self.entry_datetime = QtWidgets.QDateTimeEdit(QtCore.QDateTime.currentDateTime())
+        self.entry_datetime = QtWidgets.QDateTimeEdit(local_now_qdatetime())
         self.entry_datetime.setCalendarPopup(True)
         self.entry_datetime.setDisplayFormat("yyyy-MM-dd HH:mm")
         form.addWidget(self.entry_datetime)

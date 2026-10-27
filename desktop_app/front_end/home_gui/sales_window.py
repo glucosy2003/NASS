@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.utils import timezone
 
+from front_end.datetime_widgets import local_now_qdatetime
 from sales.models import (
     Item,
     Sale,
@@ -95,7 +96,7 @@ class SalesWindow(QtWidgets.QMainWindow):
         date_label = QtWidgets.QLabel("Sale Date:")
         date_label.setStyleSheet("font-size: 13px; color: #2c3e50;")
         date_row.addWidget(date_label)
-        self.sale_datetime = QtWidgets.QDateTimeEdit(QtCore.QDateTime.currentDateTime())
+        self.sale_datetime = QtWidgets.QDateTimeEdit(local_now_qdatetime())
         self.sale_datetime.setCalendarPopup(True)
         self.sale_datetime.setDisplayFormat("yyyy-MM-dd HH:mm")
         date_row.addWidget(self.sale_datetime)
