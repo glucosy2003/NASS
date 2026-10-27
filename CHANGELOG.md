@@ -12,6 +12,10 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 - The staff web panel now lives in a top-level `website/` app, separate from
   the Django backend, so frontend contributors can focus on it directly.
 
+### Fixed
+
+- Excel sales exports no longer include deleted sales or deleted sale lines.
+
 ## [1.0.1] - 2026-10-27
 
 ### Added

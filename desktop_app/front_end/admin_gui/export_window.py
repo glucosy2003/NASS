@@ -161,12 +161,12 @@ class ExportWindow(QtWidgets.QMainWindow):
 
             saleitems_prefetch = Prefetch(
                 reverse_accessor,
-                queryset=SaleItem.objects.select_related("item"),
+                queryset=SaleItem.objects.filter(deleted=False).select_related("item"),
                 to_attr="prefetched_items",
             )
 
             sales = (
-                Sale.objects.filter(date__range=(from_dt, to_dt))
+                Sale.objects.filter(deleted=False, date__range=(from_dt, to_dt))
                 .prefetch_related(saleitems_prefetch)
                 .order_by("-date")
             )
@@ -281,7 +281,8 @@ class ExportWindow(QtWidgets.QMainWindow):
             sale_items = getattr(sale, "prefetched_items", [])
             if not sale_items:
                 sale_items = list(
-                    SaleItem.objects.filter(sale=sale).select_related("item")
+                    SaleItem.objects.filter(sale=sale, deleted=False)
+                    .select_related("item")
                 )
 
             for idx, si in enumerate(sale_items):
